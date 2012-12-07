@@ -43,15 +43,21 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
     SignatureVersion: 2,
     Version: '2010-08-01'
   };
-  for (var key in parameters) {
-    map[key] = typeof parameters[key] === 'function' ? parameters[key]() : parameters[key];
-  }
-  var names = Object.keys(map);
+
+  Object.keys(map).forEach(
+      function(key) {
+         if(!parameters.hasOwnProperty(key)) {
+            parameters[key] = map[key];
+         }
+      }
+  );
+
+  var names = Object.keys(parameters);
   names.sort();
   var query = [];
   for (var _i = 0, _len = names.length; _i < _len; _i++) {
     var name = names[_i];
-    query.push(querystring.escape(name) + '=' + querystring.escape(map[name]));
+    query.push(querystring.escape(name) + '=' + querystring.escape(parameters[name]));
   }
   var toSign = 'GET\n' + ('monitoring.us-east-1.amazonaws.com\n') + '/\n' + query.join('&');
   var hmac = crypto.createHmac('sha256', process.env['AWS_SECRET_ACCESS_KEY']);
