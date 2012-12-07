@@ -1,7 +1,10 @@
 var crypto = require('crypto'),
   querystring = require('querystring'),
   http = require('http');
-AmazonCloudwatchClient = function () {};
+
+'use strict'
+
+var AmazonCloudwatchClient = function () {};
 AmazonCloudwatchClient.prototype.configureHttp = function (requestMethod, query) {
   var options = {
     host: 'monitoring.amazonaws.com',
@@ -16,7 +19,7 @@ AmazonCloudwatchClient.prototype.configureHttp = function (requestMethod, query)
   return options;
 };
 AmazonCloudwatchClient.prototype.timestampBuilder = function () {
-  pad = function (n) {
+  var pad = function (n) {
     if (n < 10) {
       return '0' + n;
     } else {
@@ -40,23 +43,21 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
     SignatureVersion: 2,
     Version: '2010-08-01'
   };
-  for (key in parameters) {
-    map[key] = typeof parameters[key] === 'function' ? parameters[key]() : parameters[key];
-  }
-  var names = (function () {
-    var _results;
-    _results = [];
-    for (key in map) {
-      parameters[key] = map[key];
-      _results.push(key);
-    }
-    return _results;
-  })();
+
+  Object.keys(map).forEach(
+      function(key) {
+         if(!parameters.hasOwnProperty(key)) {
+            parameters[key] = map[key];
+         }
+      }
+  );
+
+  var names = Object.keys(parameters);
   names.sort();
   var query = [];
-  for (_i = 0, _len = names.length; _i < _len; _i++) {
-    name = names[_i];
-    query.push(querystring.escape(name) + '=' + querystring.escape(map[name]));
+  for (var _i = 0, _len = names.length; _i < _len; _i++) {
+    var name = names[_i];
+    query.push(querystring.escape(name) + '=' + querystring.escape(parameters[name]));
   }
   var toSign = 'GET\n' + ('monitoring.us-east-1.amazonaws.com\n') + '/\n' + query.join('&');
   var hmac = crypto.createHmac('sha256', process.env['AWS_SECRET_ACCESS_KEY']);
