@@ -44,6 +44,11 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
     Version: '2010-08-01'
   };
 
+  // Add the security token, if available:
+  if( process.env['AWS_SECURITY_TOKEN'] != null ) {
+    map['SecurityToken'] = process.env['AWS_SECURITY_TOKEN'];
+  };
+
   Object.keys(map).forEach(
       function(key) {
          if(!parameters.hasOwnProperty(key)) {
