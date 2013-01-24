@@ -23,7 +23,7 @@ Then instantiate a new client in your application:
 To list all metrics:
 
 	client.request('ListMetrics', {}, function (response) {
-	  client.showResponse(response);
+	  console.log(JSON.stringify(response));
 	});	
 	
 	
@@ -39,5 +39,5 @@ To push custom metrics:
 	params['MetricData.member.1.Dimensions.member.1.Value'] = 'i-XXXXXX';
 	
 	client.request('PutMetricData', params, function (response) {
-	  client.showResponse(response);
+	  console.log(JSON.stringify(response));
 	});
