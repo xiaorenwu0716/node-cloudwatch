@@ -45,35 +45,32 @@ AmazonCloudwatchClient.prototype.timestampBuilder = function () {
 };
 
 AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
-  // Use the user-specified AWS host, defaulting to us-east-1, if absent.
-  if( process.env['AWS_CLOUDWATCH_HOST'] != null ) {
-    var cloudwatchHost = process.env['AWS_CLOUDWATCH_HOST']
-  }
-  else {
-    var cloudwatchHost = 'monitoring.us-east-1.amazonaws.com';
-  };
+  var secret_key = parameters.AWSSecretKey?
+        parameters.AWSSecretKey :
+        (process.env['AWS_SECRET_KEY']?
+            process.env['AWS_SECRET_KEY'] :
+            process.env['AWS_SECRET_ACCESS_KEY']
+        );
+  var cloudwatch_host = process.env['AWS_CLOUDWATCH_HOST']? process.env['AWS_CLOUDWATCH_HOST'] : 'monitoring.us-east-1.amazonaws.com';
+  
+  // don't put the secret key in the request if it was passed as a parameter
+  parameters.AWSSecretKey = undefined;
+  parameters.CloudwatchHost = undefined;
 
-  var map = {
-    AWSAccessKeyId: process.env['AWS_ACCESS_KEY_ID'],
-    Action: command,
-    SignatureMethod: 'HmacSHA256',
-    Timestamp: this.timestampBuilder(),
-    SignatureVersion: 2,
-    Version: '2010-08-01'
-  };
-
-  // Add the security token, if available:
-  if( process.env['AWS_SECURITY_TOKEN'] != null ) {
-    map['SecurityToken'] = process.env['AWS_SECURITY_TOKEN'];
-  };
-
-  Object.keys(map).forEach(
-      function(key) {
-         if(!parameters.hasOwnProperty(key)) {
-            parameters[key] = map[key];
-         }
-      }
-  );
+  if((!parameters.AWSAccessKeyId) && process.env['AWS_ACCESS_KEY_ID'])
+    parameters.AWSAccessKeyId = process.env['AWS_ACCESS_KEY_ID']; 
+  if((!parameters.SecurityToken) && process.env['AWS_SECURITY_TOKEN'])
+    parameters.SecurityToken = process.env['AWS_SECURITY_TOKEN']; 
+  if(!parameters.Timestamp)
+    parameters.Timestamp = this.timestampBuilder(); 
+  if(!parameters.Action)
+    parameters.Action = command; 
+  if(!parameters.Version) 
+    parameters.Version = '2010-08-01'
+  if(!parameters.SignatureVersion) 
+    parameters.SignatureVersion = 2;
+  if(!parameters.SignatureMethod) 
+    parameters.SignatureMethod = 'HmacSHA256'
 
   var names = Object.keys(parameters);
   names.sort();
@@ -82,8 +79,8 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
     var name = names[_i];
     query.push(this.escape(name) + '=' + this.escape(parameters[name]));
   }
-  var toSign = 'GET\n' + (cloudwatchHost + '\n') + '/\n' + query.join('&');
-  var hmac = crypto.createHmac('sha256', process.env['AWS_SECRET_ACCESS_KEY']);
+  var toSign = 'GET\n' + (cloudwatch_host + '\n') + '/\n' + query.join('&');
+  var hmac = crypto.createHmac('sha256', secret_key);
   hmac.update(toSign);
   var digest = this.escape(hmac.digest('base64'));
   query.push('Signature=' + digest);
