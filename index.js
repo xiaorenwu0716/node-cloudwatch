@@ -51,7 +51,12 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
             process.env['AWS_SECRET_KEY'] :
             process.env['AWS_SECRET_ACCESS_KEY']
         );
-  var cloudwatch_host = process.env['AWS_CLOUDWATCH_HOST']? process.env['AWS_CLOUDWATCH_HOST'] : 'monitoring.us-east-1.amazonaws.com';
+  var cloudwatch_host = parameters.CloudwatchHost?
+        parameters.CloudwatchHost : 
+        (process.env['AWS_CLOUDWATCH_HOST']?
+            process.env['AWS_CLOUDWATCH_HOST'] :
+            'monitoring.us-east-1.amazonaws.com';
+        );
   
   // don't put the secret key in the request if it was passed as a parameter
   parameters.AWSSecretKey = undefined;
