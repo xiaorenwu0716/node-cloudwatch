@@ -5,14 +5,14 @@ var crypto = require('crypto'),
 
 var AmazonCloudwatchClient = function () {};
 
-AmazonCloudwatchClient.prototype.configureHttp = function (requestMethod, query) {
+AmazonCloudwatchClient.prototype.configureHttp = function (requestMethod, query, host) {
   // Use the user-specified AWS host, defaulting to us-east-1, if absent.
-  if( process.env['AWS_CLOUDWATCH_HOST'] != null ) {
+  if (host)
+    var cloudwatchHost = host;
+  else if ( process.env['AWS_CLOUDWATCH_HOST'] != null )
     var cloudwatchHost = process.env['AWS_CLOUDWATCH_HOST']
-  }
-  else {
+  else
     var cloudwatchHost = 'monitoring.us-east-1.amazonaws.com';
-  };
 
   var options = {
     host: cloudwatchHost,
@@ -59,8 +59,8 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
         );
   
   // don't put the secret key in the request if it was passed as a parameter
-  parameters.AWSSecretKey = undefined;
-  parameters.CloudwatchHost = undefined;
+  delete parameters.AWSSecretKey;
+  delete parameters.CloudwatchHost;
 
   if((!parameters.AWSAccessKeyId) && process.env['AWS_ACCESS_KEY_ID'])
     parameters.AWSAccessKeyId = process.env['AWS_ACCESS_KEY_ID']; 
@@ -93,8 +93,9 @@ AmazonCloudwatchClient.prototype.queryBuilder = function (command, parameters) {
 };
 
 AmazonCloudwatchClient.prototype.request = function (action, requestParams, callback) {
+  var host = requestParams.CloudwatchHost;
   var query = this.queryBuilder(action, requestParams);
-  var options = this.configureHttp('GET', '/?' + query.join('&'));
+  var options = this.configureHttp('GET', '/?' + query.join('&'), host);
   this.makeRequest(options, function (response) {
     callback(response);
   });
